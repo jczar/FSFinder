@@ -97,12 +97,12 @@ public class MultiThreadFSTraverserV6 extends FSTraverser implements MultiThread
     	        break;
     	        
     	    case TOP_DOWN:
-    	    	traversePathTopDown(path);
+    	    	traversePathTopDown(path, ExecutionContext.getInstance().getUserInput().isBacktrace());
     	        break;
     	}    	
     }
 
-    private void traversePathTopDown(String path) {
+    private void traversePathTopDown(String path, boolean isBackTrace) {
         String pathElements[] = FSUtil.getPathElements(path);
         String _path = new String(path);
         
@@ -112,7 +112,13 @@ public class MultiThreadFSTraverserV6 extends FSTraverser implements MultiThread
         
         for (int idx = pathElements.length - 1; idx > 0; idx--) {
             if (idx == pathElements.length - 1) {
-                queuePath(_path, null);                
+                queuePath(_path, null);
+                
+                // Don't like this hack, but somehow the main thread needs to hold 
+                // for the subtasks to start queuing. Otherwise it fails.
+                pause(5);
+                
+                if (!isBackTrace) break;
             }
             
             int pathElmIdx = _path.lastIndexOf(pathElements[idx]);
@@ -128,6 +134,8 @@ public class MultiThreadFSTraverserV6 extends FSTraverser implements MultiThread
     }
     
     private void traversePathBottomUp(String path) {
+    	fsTraverseContext.setSingleStartPathComps(FSUtil.getPathElements(path));
+    	
     	queuePath("/", new String[] { String.valueOf(0), 
     					       fsTraverseContext.getSingleStartPathsComps()[0], 
     					       String.valueOf(false) });
@@ -141,23 +149,34 @@ public class MultiThreadFSTraverserV6 extends FSTraverser implements MultiThread
         }
     	
     	boolean isSingleStartPath = (startPaths.size() == 1);
+    	boolean isBottomUp = false;
     	
     	// Validates that, if a wildcard is passed in a path, there is only a single path being passed.
     	for (String startPath: startPaths) {
-    	    if (StringUtil.isNotNullOrEmpty(startPath)) {
-    	    	if (startPath.indexOf("*") >= 0) {
-    	    		setTraverseDirection(TRAVERSE_DIRECTION.BOTTOM_UP);
-    	    		startPath = FSUtil.formatBottomUpPath(startPath);
+    		if (StringUtil.isNotNullOrEmpty(startPath)) {
+    			if (startPath.indexOf("*") >= 0) {
+    				setTraverseDirection(TRAVERSE_DIRECTION.BOTTOM_UP);
+    				startPath = FSUtil.formatBottomUpPath(startPath);
+    				
+    				if (!isSingleStartPath) {
+    					throw new FSFinderException("If a wildcard is used (*), only one path should be passed");
+    				}
 
-        	    	fsTraverseContext.setSingleStartPathComps(FSUtil.getPathElements(startPath));
-    	    		if (!isSingleStartPath) {
-    	    			throw new FSFinderException("If a wildcard is used (*), only one path should be passed");
-    	    		}
-    	    	} else {
-    	    		setTraverseDirection(TRAVERSE_DIRECTION.TOP_DOWN);
-    	    	}
-    	    }
+    				isBottomUp = true;
+    			}
+    		}
     	}
+
+    	if (!isBottomUp) {
+    		// If no wildcards were used, the search is process based, or if user indicated it explicitly, 
+    		// approach should be TOP_DOWN. 
+    		// However, ONLY IF backtrace was indicated, the app will move back to parent directories in the path.
+    		// Otherwise, it will only span threads searching from the very last path component
+    		// (which is how a regular find command works in Unix)
+    		// For process based searches, backtrace is TRUE implicitly.
+    		setTraverseDirection(TRAVERSE_DIRECTION.TOP_DOWN);    		
+    	}
+
     	
         if(!validateAbsolutePaths(startPaths))
             throw new FSFinderException("All provided start paths must be absolute");
@@ -283,6 +302,14 @@ public class MultiThreadFSTraverserV6 extends FSTraverser implements MultiThread
             }
         } catch (InterruptedException ie) {
             LoggingUtil.printlnVerboseMessage("Internal executor service could not be shutdown gracefully. Some paths may have not been traversed.");
+        }
+    }
+    
+    private void pause(int millisecs) {
+        try {
+            Thread.sleep(millisecs);
+        } catch (InterruptedException ie) {
+    	    throw new FSFinderException(ie);
         }
     }
 

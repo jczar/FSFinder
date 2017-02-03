@@ -35,9 +35,9 @@ public class MultiThreadFSTraverseWorkerBottomUp extends MultiThreadFSTraverseWo
      * 
      *  0: Current Start Path Component index
      *  1: Directory name expected to be found in the current directory level
-     *  2: Previous wildcard, which will indicate any wildcard processed by a previous worker  
-     *     It will be used to control the behaviour of the next path component evaluation
-     *  3: OffStartPath. Indicates if the current path has been forked out of the main start path
+     *  Discarded --2: Previous wildcard, which will indicate any wildcard processed by a previous worker  
+     *  Discarded --   It will be used to control the behaviour of the next path component evaluation
+     *  2: OffStartPath. Indicates if the current path has been forked out of the main start path
      *     (e.g. start path: /u01/app/fa/ and current path searches /u01/fusionapps/ onwards)
      */
     private void processInputArgs(String[] args) {

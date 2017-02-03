@@ -34,7 +34,7 @@ public class FSTargetFilter {
     public boolean isTarget(String fileName, String absolutePath) {
         FSTarget fsTarget = null;
         
-        if ((fsTarget = targetManager.getTarget(fileName)) != null) {
+        if ((fsTarget = targetManager.matchTarget(fileName)) != null) {
             return fsTarget.isValid(absolutePath);
         } else {
             return false;

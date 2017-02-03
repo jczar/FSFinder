@@ -21,6 +21,7 @@ public class ExecutionContext {
     //private static IterableOracleInventoryFinder iterableFinder;
     
     private UserCmdLineInput userInput = null;
+    private boolean processBasedSearch = false;
     
     private static ExecutionContext ctx = null;
     
@@ -80,10 +81,15 @@ public class ExecutionContext {
     
     public void setUserInput(UserCmdLineInput userCmdLineInput) {
     	userInput = userCmdLineInput;
+    	processBasedSearch = userInput.isProcessBased();
     }
     
     public UserCmdLineInput getUserInput() {
     	return userInput;
+    }
+    
+    public boolean isProcessBasedSearch() {
+    	return processBasedSearch;
     }
     
     public void printExecutionInfo(List<String> targetsFound, List<String> failedPaths) {

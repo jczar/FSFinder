@@ -14,7 +14,10 @@ public class UserCmdLineInput {
 	private int maxOccurrences = 1;	
 	private boolean isVerbose = false;
 	private boolean isDebug = false;
-	private boolean searchAll = false;
+	private boolean isBacktrace = false;
+	private boolean isRegex = false;
+	private boolean isProcessBased = false;
+	private boolean searchAll = true;
 	
 	private static UserCmdLineInput userInput = null;
 	
@@ -37,12 +40,24 @@ public class UserCmdLineInput {
 		return maxOccurrences;
 	}
 	
+	public boolean isProcessBased() {
+		return isProcessBased;
+	}
+	
 	public boolean isVerbose() {
 		return isVerbose;
 	}
 	
 	public boolean isDebug() {
 		return isDebug;
+	}
+	
+	public boolean isBacktrace() {
+		return isBacktrace;
+	}
+	
+	public boolean isRegex() {
+		return isRegex;
 	}
 	
 	public boolean isSearchAll() {
@@ -74,7 +89,7 @@ public class UserCmdLineInput {
 		
 		 userInput = new UserCmdLineInput();
 		 
-		 Getopt g = new Getopt("FSFinder", args, "t:s:p:n:vad");
+		 Getopt g = new Getopt("FSFinder", args, "t:s:p:n:vdbr");
 
 		 int c;
 		 while ((c = g.getopt()) != -1) {
@@ -89,6 +104,9 @@ public class UserCmdLineInput {
 		              
 		          case 'p':
 		              userInput.processPatterns.add(g.getOptarg());
+		              userInput.isProcessBased = true;
+		              userInput.isBacktrace = true;
+		              
 	  	              break;
 	  	              
 		          case 'v':
@@ -99,13 +117,19 @@ public class UserCmdLineInput {
 		        	  userInput.isDebug = true;
 		        	  break;
 		        	  
-		          case 'a':
-		        	  userInput.searchAll = true;
+		          case 'b':
+		        	  userInput.isBacktrace = true;
+		        	  break;
+		        	  
+		          case 'r': 
+		        	  userInput.isRegex = true;
 		        	  break;
 		        	  
 		          case 'n':
 		        	  try {
 		        	      userInput.maxOccurrences = Integer.parseInt(g.getOptarg());
+		        	      userInput.searchAll = false;
+		        	      
 		        	  } catch (Exception e) {
 		        		  return null;
 		        	  }
@@ -126,9 +150,13 @@ public class UserCmdLineInput {
     	System.out.println("Usage: java -jar fsfinder.jar -t <target_file> -s <start_dir> [options]");
     	System.out.println("\nWhere options may be one of the following:");
     	
+    	System.out.println("-s Specifies start point for the search");    	
     	System.out.println("\n-p <process_pattern>\t\tIndicates the pattern to use in a process based search. Wildcards \"*\" and \"**\" may be used");
-    	System.out.println("-a\t\t\t\tIndicates that all occurrences of that file should be searched");
     	System.out.println("-n <number_of_occurrences>\tSpecifies the maximum number of occurrences to find");
-    	System.out.println("-v\t\t\t\tRun the finder in verbose mode");    	
+    	System.out.println("-d Runs the finder in debug mode");
+    	System.out.println("-d Runs the finder in debug mode");
+    	System.out.println("-b Specifies backtrace search (top-bottom or right to left search)");
+    	System.out.println("-r Indicates that the target given should be considered a regex expression");
+    	System.out.println("-v\t\t\t\tRuns the finder in verbose mode");    	
     }
 }
